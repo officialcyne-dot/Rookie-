@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOKIEFIK - Real-Time Data & Security Vault</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldBrand: '#10b981',
+                        crimsonBrand: '#ef4444',
+                        slateDark: '#0f172a',
+                        slateCardDark: '#1e293b',
+                        slateBorderDark: '#334155'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons & FontAwesome -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 9999px;
+        }
+        .active-tab {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #10b981 !important;
+            border-left: 4px solid #10b981;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- AUTHENTICATION SCREEN (SIGN IN / SIGN UP) -->
+    <div id="authScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
+        <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 md:p-8 space-y-6">
+            <!-- Brand Logo Header -->
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500 to-red-500 flex items-center justify-center text-white font-black text-2xl shadow-lg">R</div>
+                <h1 class="text-2xl font-extrabold tracking-wider text-emerald-500">ROOKIE<span class="text-red-500">FIK</span></h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Secure Real-Time Productivity & Personal Vault</p>
+            </div>
+
+            <!-- Auth Toggle Tabs -->
+            <div class="flex bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl text-xs font-semibold">
+                <button id="tabSignInBtn" onclick="switchAuthMode('signin')" class="flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-emerald-500 shadow-sm transition">Sign In</button>
+                <button id="tabSignUpBtn" onclick="switchAuthMode('signup')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white transition">Sign Up</button>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div id="displayNameContainer" class="hidden space-y-1">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Full Name</label>
+                    <input type="text" id="authDisplayName" placeholder="John Doe" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="user@rookiefik.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div id="authErrorMsg" class="hidden text-xs text-red-500 bg-red-50 dark:bg-red-950/40 p-3 rounded-xl font-medium border border-red-200 dark:border-red-900"></div>
+
+                <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i> <span id="authBtnText">Sign In to ROOKIEFIK</span>
+                </button>
+            </form>
+
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-700 text-center space-y-2">
+                <button type="button" onclick="loginDemoUser()" class="w-full py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition">
+                    <i class="fas fa-bolt text-amber-500 mr-1"></i> Fast Demo Login (One Click)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE (HIDDEN UNTIL AUTHENTICATED) -->
+    <div id="appContainer" class="hidden flex-1 flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Mobile Navigation Header -->
+        <header class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white font-black">R</div>
+                <span class="text-xl font-extrabold tracking-wider text-emerald-500">ROOKIE<span class="text-red-500">FIK</span></span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:inline text-amber-400"></i>
+                </button>
+                <button onclick="toggleMobileSidebar()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="hidden md:flex flex-col w-full md:w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex-shrink-0 z-30">
+            <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-red-500 flex items-center justify-center text-white font-black text-xl shadow-lg">R</div>
+                    <div>
+                        <span class="text-xl font-black tracking-wider text-emerald-500">ROOKIE<span class="text-red-500">FIK</span></span>
+                        <p class="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Real-Time Hub</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nav Links -->
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-chart-pie w-5 text-center"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('noteboard')" id="nav-noteboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Note Board</span>
+                </button>
+                <button onclick="switchTab('contacts')" id="nav-contacts" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-address-book w-5 text-center"></i>
+                    <span>Contacts</span>
+                </button>
+                <button onclick="switchTab('files')" id="nav-files" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-folder-open w-5 text-center"></i>
+                    <span>Files Vault</span>
+                </button>
+                <button onclick="switchTab('passwords')" id="nav-passwords" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-key w-5 text-center"></i>
+                    <span>Password Store</span>
+                </button>
+                <button onclick="switchTab('emails')" id="nav-emails" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-envelope w-5 text-center"></i>
+                    <span>Email Access</span>
+                </button>
+                <button onclick="switchTab('events')" id="nav-events" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-calendar-alt w-5 text-center"></i>
+                    <span>Events Schedule</span>
+                </button>
+                <button onclick="switchTab('timestamps')" id="nav-timestamps" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-history w-5 text-center"></i>
+                    <span>Timestamp Log</span>
+                </button>
+                <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+                    <i class="fas fa-cog w-5 text-center"></i>
+                    <span>Profile & Settings</span>
+                </button>
+            </nav>
+
+            <!-- User Status / Sign Out -->
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/60">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div id="userAvatar" class="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-500 font-bold flex items-center justify-center text-sm flex-shrink-0">A</div>
+                    <div class="text-xs truncate">
+                        <p id="userProfileName" class="font-bold text-slate-800 dark:text-slate-200 truncate">Loading...</p>
+                        <p id="userProfileEmail" class="text-[10px] text-slate-400 truncate">user@rookiefik.com</p>
+                    </div>
+                </div>
+                <button onclick="handleSignOut()" title="Sign Out" class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col min-h-0">
+            
+            <!-- Top Bar Banner -->
+            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                    <h1 id="pageTitle" class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>Dashboard Overview</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Real-time Firebase Firestore synced vault database with active timestamp records.</p>
+                </div>
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <span id="liveClock" class="font-mono text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">--:--:--</span>
+                    <button onclick="syncVaultToMail()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Save Data on Mail</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Panels Container -->
+            <div id="panelsContainer" class="flex-1">
+
+                <!-- 1. DASHBOARD OVERVIEW -->
+                <section id="panel-dashboard" class="tab-panel space-y-6">
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Contacts</p>
+                                <h3 class="text-2xl font-black text-emerald-500 mt-1" id="stat-contacts">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><i class="fas fa-address-book"></i></div>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Vault Files</p>
+                                <h3 class="text-2xl font-black text-red-500 mt-1" id="stat-files">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center"><i class="fas fa-folder-open"></i></div>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Passwords</p>
+                                <h3 class="text-2xl font-black text-emerald-500 mt-1" id="stat-passwords">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><i class="fas fa-key"></i></div>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Events</p>
+                                <h3 class="text-2xl font-black text-red-500 mt-1" id="stat-events">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center"><i class="fas fa-calendar-alt"></i></div>
+                        </div>
+                        <div class="col-span-2 lg:col-span-1 p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Notes</p>
+                                <h3 class="text-2xl font-black text-emerald-500 mt-1" id="stat-notes">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center"><i class="fas fa-columns"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Activity Stream -->
+                        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-history text-emerald-500"></i>
+                                    <span>Real-Time Activity & Timestamp Log</span>
+                                </h3>
+                                <button onclick="switchTab('timestamps')" class="text-xs text-emerald-500 hover:underline font-semibold">View All Logs</button>
+                            </div>
+                            <div class="divide-y divide-slate-100 dark:divide-slate-700/60" id="dashTimestampStream"></div>
+                        </div>
+
+                        <!-- Quick Shortcuts -->
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <i class="fas fa-bolt text-red-500"></i>
+                                    <span>Quick Vault Modals</span>
+                                </h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="openNoteModal()" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-left transition">
+                                        <i class="fas fa-plus text-emerald-500 block mb-1"></i> Add Note
+                                    </button>
+                                    <button onclick="openContactModal()" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-left transition">
+                                        <i class="fas fa-user-plus text-red-500 block mb-1"></i> Add Contact
+                                    </button>
+                                    <button onclick="openPasswordModal()" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-left transition">
+                                        <i class="fas fa-key text-emerald-500 block mb-1"></i> Pass Vault
+                                    </button>
+                                    <button onclick="openEventModal()" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl border border-slate-200 dark:border-slate-600 text-xs font-semibold text-left transition">
+                                        <i class="fas fa-calendar-plus text-red-500 block mb-1"></i> Schedule
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                                <p class="text-[11px] text-slate-400">Authenticated user: <span id="dashAccountText" class="font-bold text-emerald-500">Active</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. KANBAN NOTE BOARD -->
+                <section id="panel-noteboard" class="tab-panel hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <input type="text" id="searchNotes" onkeyup="renderNotes()" placeholder="Search notes..." class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                        <button onclick="openNoteModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                            <i class="fas fa-plus"></i> New Note
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+                                <span class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> To Do
+                                </span>
+                                <span class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full font-bold" id="count-todo">0</span>
+                            </div>
+                            <div class="space-y-3 min-h-[250px]" id="col-todo"></div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+                                <span class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> In Progress
+                                </span>
+                                <span class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full font-bold" id="count-in-progress">0</span>
+                            </div>
+                            <div class="space-y-3 min-h-[250px]" id="col-in-progress"></div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+                                <span class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completed
+                                </span>
+                                <span class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full font-bold" id="count-completed">0</span>
+                            </div>
+                            <div class="space-y-3 min-h-[250px]" id="col-completed"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. CONTACTS MANAGER -->
+                <section id="panel-contacts" class="tab-panel hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <input type="text" id="searchContacts" onkeyup="renderContacts()" placeholder="Search contacts..." class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                        <button onclick="openContactModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                            <i class="fas fa-user-plus"></i> Add Contact
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="contactsGrid"></div>
+                </section>
+
+                <!-- 4. FILES VAULT -->
+                <section id="panel-files" class="tab-panel hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <input type="text" id="searchFiles" onkeyup="renderFiles()" placeholder="Search files..." class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                        <button onclick="openFileModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                            <i class="fas fa-upload"></i> Upload Vault File
+                        </button>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700">
+                                    <tr>
+                                        <th class="p-4">File Name</th>
+                                        <th class="p-4">Type</th>
+                                        <th class="p-4">Size</th>
+                                        <th class="p-4">Upload Timestamp</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60" id="filesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. PASSWORD VAULT -->
+                <section id="panel-passwords" class="tab-panel hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <input type="text" id="searchPasswords" onkeyup="renderPasswords()" placeholder="Search stored passwords..." class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                        <button onclick="openPasswordModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                            <i class="fas fa-key"></i> Store Password
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="passwordsGrid"></div>
+                </section>
+
+                <!-- 6. EMAIL ACCESS MANAGER -->
+                <section id="panel-emails" class="tab-panel hidden space-y-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                            <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-100 dark:border-slate-700">
+                                <h3 class="font-bold text-sm text-slate-800 dark:text-white flex items-center gap-2"><i class="fas fa-inbox text-emerald-500"></i> Email Messages</h3>
+                                <button onclick="openEmailModal()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg font-medium transition">
+                                    Compose
+                                </button>
+                            </div>
+                            <div class="space-y-2 max-h-[450px] overflow-y-auto" id="emailList"></div>
+                        </div>
+                        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col justify-between" id="emailReader">
+                            <div class="text-center py-16 text-slate-400">
+                                <i class="fas fa-envelope-open text-4xl mb-3 opacity-30"></i>
+                                <p class="text-xs">Select an email to view complete body and timestamps.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. EVENTS SCHEDULE -->
+                <section id="panel-events" class="tab-panel hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <input type="text" id="searchEvents" onkeyup="renderEvents()" placeholder="Search schedule..." class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-64">
+                        <button onclick="openEventModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-2 transition">
+                            <i class="fas fa-calendar-plus"></i> Schedule Event
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="eventsGrid"></div>
+                </section>
+
+                <!-- 8. TIMESTAMP HISTORY LOG -->
+                <section id="panel-timestamps" class="tab-panel hidden space-y-4">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+                        <h3 class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                            <i class="fas fa-history text-emerald-500"></i> Full Chronological Timestamp Register
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">"Keep and save time of all stored things" — Detailed timestamps synced real-time from Firestore.</p>
+                        <div class="divide-y divide-slate-100 dark:divide-slate-700/60" id="fullTimestampLog"></div>
+                    </div>
+                </section>
+
+                <!-- 9. PROFILE & SETTINGS -->
+                <section id="panel-settings" class="tab-panel hidden space-y-6">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl">
+                        <h3 class="font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">User Profile & Security Settings</h3>
+                        <form onsubmit="saveProfileSettings(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Account Display Name</label>
+                                <input type="text" id="settingsName" required class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Email Address</label>
+                                <input type="email" id="settingsEmail" readonly class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-950 text-xs text-slate-500 cursor-not-allowed">
+                            </div>
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition">Save Settings</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 max-w-xl space-y-3">
+                        <h3 class="font-bold text-slate-900 dark:text-white">Account Session</h3>
+                        <button onclick="handleSignOut()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out from ROOKIEFIK
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- GLOBAL MODAL DIALOG -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div id="modalCard" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg overflow-hidden shadow-2xl transition-all scale-95 opacity-0">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-slate-900 dark:text-white text-sm">Modal</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-base">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-5"></div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-5 right-5 px-4 py-3 rounded-xl bg-slate-900 text-white text-xs font-medium shadow-2xl flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fas fa-check-circle text-emerald-400" id="toastIcon"></i>
+        <span id="toastMsg">Action updated</span>
+    </div>
+
+    <!-- FIREBASE SERVICES MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            addDoc, 
+            deleteDoc, 
+            updateDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase context
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'rookiefik-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { apiKey: "demo-api-key", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let authMode = 'signin'; // 'signin' or 'signup'
+
+        // Local State synced with Firestore
+        let store = {
+            notes: [],
+            contacts: [],
+            files: [],
+            passwords: [],
+            emails: [],
+            events: []
+        };
+
+        let unsubscribes = [];
+
+        // Dynamic Auth State Monitoring
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('userProfileEmail').innerText = user.email || 'authenticated_user';
+                document.getElementById('userProfileName').innerText = user.displayName || user.email?.split('@')[0] || 'Admin User';
+                document.getElementById('userAvatar').innerText = (user.displayName || user.email || 'A').charAt(0).toUpperCase();
+                document.getElementById('dashAccountText').innerText = user.email;
+
+                subscribeToUserData(user.uid);
+            } else {
+                document.getElementById('authScreen').classList.remove('hidden');
+                document.getElementById('appContainer').classList.add('hidden');
+                clearSubscriptions();
+            }
+        });
+
+        // Auth Tab Switching
+        window.switchAuthMode = (mode) => {
+            authMode = mode;
+            const signinBtn = document.getElementById('tabSignInBtn');
+            const signupBtn = document.getElementById('tabSignUpBtn');
+            const nameField = document.getElementById('displayNameContainer');
+            const btnText = document.getElementById('authBtnText');
+
+            if (mode === 'signup') {
+                signupBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-emerald-500 shadow-sm transition";
+                signinBtn.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white transition";
+                nameField.classList.remove('hidden');
+                btnText.innerText = "Register ROOKIEFIK Account";
+            } else {
+                signinBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-emerald-500 shadow-sm transition";
+                signupBtn.className = "flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white transition";
+                nameField.classList.add('hidden');
+                btnText.innerText = "Sign In to ROOKIEFIK";
+            }
+        };
+
+        // Form Submit Handler for Sign In / Sign Up
+        window.handleAuthSubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const displayName = document.getElementById('authDisplayName').value;
+            const errBox = document.getElementById('authErrorMsg');
+
+            errBox.classList.add('hidden');
+
+            try {
+                if (authMode === 'signup') {
+                    const res = await createUserWithEmailAndPassword(auth, email, password);
+                    showToast("Account registered successfully!");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast("Signed in successfully!");
+                }
+            } catch (err) {
+                errBox.innerText = err.message || "Authentication error occurred.";
+                errBox.classList.remove('hidden');
+            }
+        };
+
+        // Demo User Sign In
+        window.loginDemoUser = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                showToast("Signed in as Demo User.");
+            } catch (e) {
+                // Fallback demo sign-in
+                try {
+                    await signInWithEmailAndPassword(auth, "demo@rookiefik.com", "Password123!");
+                } catch {
+                    await createUserWithEmailAndPassword(auth, "demo@rookiefik.com", "Password123!");
+                }
+            }
+        };
+
+        // Sign Out
+        window.handleSignOut = async () => {
+            await signOut(auth);
+            showToast("Signed out.");
+        };
+
+        // Firestore Real-Time Subscriptions (Rule 1 & Rule 2 compliant)
+        function subscribeToUserData(userId) {
+            clearSubscriptions();
+
+            const collections = ['notes', 'contacts', 'files', 'passwords', 'emails', 'events'];
+
+            collections.forEach(colName => {
+                const colRef = collection(db, 'artifacts', appId, 'users', userId, colName);
+                
+                const unsub = onSnapshot(colRef, (snapshot) => {
+                    store[colName] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderAll();
+                }, (error) => {
+                    console.error(`Firestore snapshot error for ${colName}:`, error);
+                });
+
+                unsubscribes.push(unsub);
+            });
+        }
+
+        function clearSubscriptions() {
+            unsubscribes.forEach(unsub => unsub());
+            unsubscribes = [];
+            store = { notes: [], contacts: [], files: [], passwords: [], emails: [], events: [] };
+        }
+
+        // Standard Firestore Write Wrappers
+        function getTimestamp() {
+            const now = new Date();
+            return now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' +
+                   now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function addItem(colName, data) {
+            if (!auth.currentUser) return;
+            const colRef = collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, colName);
+            await addDoc(colRef, {
+                ...data,
+                savedTime: getTimestamp(),
+                createdAt: Date.now()
+            });
+        }
+
+        async function updateItem(colName, docId, data) {
+            if (!auth.currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, colName, docId);
+            await updateDoc(docRef, {
+                ...data,
+                savedTime: getTimestamp()
+            });
+        }
+
+        async function deleteItem(colName, docId) {
+            if (!auth.currentUser) return;
+            const docRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, colName, docId);
+            await deleteDoc(docRef);
+        }
+
+        // Render Orchestration
+        function renderAll() {
+            updateDashboardStats();
+            renderNotes();
+            renderContacts();
+            renderFiles();
+            renderPasswords();
+            renderEmails();
+            renderEvents();
+            renderTimestampsLog();
+        }
+
+        function updateDashboardStats() {
+            document.getElementById('stat-contacts').innerText = store.contacts.length;
+            document.getElementById('stat-files').innerText = store.files.length;
+            document.getElementById('stat-passwords').innerText = store.passwords.length;
+            document.getElementById('stat-events').innerText = store.events.length;
+            document.getElementById('stat-notes').innerText = store.notes.length;
+
+            // Activity Log
+            const all = getSortedTimestamps().slice(0, 5);
+            const container = document.getElementById('dashTimestampStream');
+            if (all.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No vault entries created yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = all.map(item => `
+                <div class="py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-emerald-500 flex items-center justify-center">
+                            <i class="fas ${item.icon}"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(item.title)}</p>
+                            <p class="text-[10px] text-slate-400">${item.module}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-mono text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">
+                        ${item.savedTime}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function getSortedTimestamps() {
+            let list = [];
+            store.notes.forEach(i => list.push({ module: 'Note', title: i.title, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-columns text-emerald-500' }));
+            store.contacts.forEach(i => list.push({ module: 'Contact', title: i.name, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-user text-red-500' }));
+            store.files.forEach(i => list.push({ module: 'File', title: i.name, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-file text-emerald-500' }));
+            store.passwords.forEach(i => list.push({ module: 'Password', title: i.service, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-key text-red-500' }));
+            store.events.forEach(i => list.push({ module: 'Event', title: i.title, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-calendar text-emerald-500' }));
+            store.emails.forEach(i => list.push({ module: 'Email', title: i.subject, savedTime: i.savedTime, createdAt: i.createdAt || 0, icon: 'fa-envelope text-red-500' }));
+            return list.sort((a,b) => b.createdAt - a.createdAt);
+        }
+
+        // Render Notes
+        window.renderNotes = () => {
+            const query = (document.getElementById('searchNotes')?.value || '').toLowerCase();
+            const colTodo = document.getElementById('col-todo');
+            const colInProg = document.getElementById('col-in-progress');
+            const colComp = document.getElementById('col-completed');
+
+            const filtered = store.notes.filter(n => (n.title || '').toLowerCase().includes(query) || (n.content || '').toLowerCase().includes(query));
+
+            const todo = filtered.filter(n => n.column === 'todo');
+            const inProg = filtered.filter(n => n.column === 'in-progress');
+            const comp = filtered.filter(n => n.column === 'completed');
+
+            document.getElementById('count-todo').innerText = todo.length;
+            document.getElementById('count-in-progress').innerText = inProg.length;
+            document.getElementById('count-completed').innerText = comp.length;
+
+            const card = (n) => `
+                <div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">${escapeHtml(n.tag || 'General')}</span>
+                        <button onclick="window.deleteNote('${n.id}')" class="text-xs text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <h4 class="font-bold text-xs text-slate-800 dark:text-white">${escapeHtml(n.title)}</h4>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-tight">${escapeHtml(n.content)}</p>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-200/60 dark:border-slate-600/60 text-[10px] text-slate-400">
+                        <span><i class="fas fa-clock mr-1"></i>${n.savedTime}</span>
+                        <select onchange="window.moveNote('${n.id}', this.value)" class="bg-white dark:bg-slate-800 text-[10px] border border-slate-200 dark:border-slate-600 rounded px-1 py-0.5">
+                            <option value="todo" ${n.column==='todo'?'selected':''}>To Do</option>
+                            <option value="in-progress" ${n.column==='in-progress'?'selected':''}>In Prog</option>
+                            <option value="completed" ${n.column==='completed'?'selected':''}>Done</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            colTodo.innerHTML = todo.map(card).join('') || `<p class="text-[11px] text-slate-400 italic">No tasks</p>`;
+            colInProg.innerHTML = inProg.map(card).join('') || `<p class="text-[11px] text-slate-400 italic">No tasks</p>`;
+            colComp.innerHTML = comp.map(card).join('') || `<p class="text-[11px] text-slate-400 italic">No tasks</p>`;
+        };
+
+        // Render Contacts
+        window.renderContacts = () => {
+            const query = (document.getElementById('searchContacts')?.value || '').toLowerCase();
+            const grid = document.getElementById('contactsGrid');
+            const filtered = store.contacts.filter(c => (c.name || '').toLowerCase().includes(query) || (c.email || '').toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-xs text-slate-400 py-8">No contacts recorded.</p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(c => `
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-500 font-bold flex items-center justify-center text-xs">
+                                ${(c.name || 'C').charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800 dark:text-white">${escapeHtml(c.name)}</h4>
+                                <p class="text-[11px] text-slate-400">${escapeHtml(c.email)}</p>
+                            </div>
+                        </div>
+                        <button onclick="window.deleteContact('${c.id}')" class="text-xs text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300">
+                        <i class="fas fa-phone mr-1.5 text-emerald-500"></i> ${escapeHtml(c.phone)}
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400 font-mono">
+                        Saved: ${c.savedTime}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // Render Files
+        window.renderFiles = () => {
+            const query = (document.getElementById('searchFiles')?.value || '').toLowerCase();
+            const tbody = document.getElementById('filesTableBody');
+            const filtered = store.files.filter(f => (f.name || '').toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-xs text-slate-400">No vault files stored.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(f => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
+                    <td class="p-4 font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-file-alt text-red-500"></i> ${escapeHtml(f.name)}
+                    </td>
+                    <td class="p-4 text-slate-500 dark:text-slate-400">${escapeHtml(f.type)}</td>
+                    <td class="p-4 text-slate-500 dark:text-slate-400">${escapeHtml(f.size)}</td>
+                    <td class="p-4 text-emerald-500 font-mono">${f.savedTime}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="window.deleteFile('${f.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        // Render Passwords
+        window.renderPasswords = () => {
+            const query = (document.getElementById('searchPasswords')?.value || '').toLowerCase();
+            const grid = document.getElementById('passwordsGrid');
+            const filtered = store.passwords.filter(p => (p.service || '').toLowerCase().includes(query) || (p.username || '').toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-xs text-slate-400 py-8">Password vault is empty.</p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => `
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-shield-alt text-emerald-500"></i>
+                            <h4 class="font-bold text-xs text-slate-800 dark:text-white">${escapeHtml(p.service)}</h4>
+                        </div>
+                        <button onclick="window.deletePassword('${p.id}')" class="text-xs text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="space-y-1 text-xs">
+                        <p class="text-slate-400">User: <span class="text-slate-800 dark:text-slate-200 font-medium">${escapeHtml(p.username)}</span></p>
+                        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2 rounded-xl">
+                            <input type="password" id="pass-val-${p.id}" value="${escapeHtml(p.pass)}" readonly class="bg-transparent border-none focus:outline-none font-mono text-xs text-emerald-500 w-full">
+                            <div class="flex gap-1">
+                                <button onclick="window.togglePassVisibility('${p.id}')" class="p-1 text-slate-400 hover:text-slate-600"><i class="fas fa-eye"></i></button>
+                                <button onclick="window.copyPass('${escapeHtml(p.pass)}')" class="p-1 text-slate-400 hover:text-emerald-500"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400 font-mono">
+                        Saved: ${p.savedTime}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // Render Emails
+        window.renderEmails = () => {
+            const list = document.getElementById('emailList');
+            if (store.emails.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">No email history.</p>`;
+                return;
+            }
+
+            list.innerHTML = store.emails.map(e => `
+                <div onclick="window.readEmail('${e.id}')" class="p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-xl cursor-pointer border border-transparent hover:border-emerald-500 transition space-y-1">
+                    <p class="font-bold text-slate-800 dark:text-slate-200 truncate text-xs">${escapeHtml(e.recipient)}</p>
+                    <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 truncate">${escapeHtml(e.subject)}</p>
+                    <p class="text-[10px] text-slate-400 font-mono">${e.savedTime}</p>
+                </div>
+            `).join('');
+        };
+
+        window.readEmail = (id) => {
+            const mail = store.emails.find(e => e.id === id);
+            if (!mail) return;
+
+            document.getElementById('emailReader').innerHTML = `
+                <div>
+                    <div class="border-b border-slate-100 dark:border-slate-700 pb-4 mb-4">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">${escapeHtml(mail.subject)}</h3>
+                            <button onclick="window.deleteEmail('${mail.id}')" class="text-xs text-red-500 hover:text-red-700"><i class="fas fa-trash"></i> Delete</button>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">To: <span class="text-emerald-500">${escapeHtml(mail.recipient)}</span></p>
+                        <p class="text-[10px] text-slate-400 font-mono mt-0.5">Timestamp: ${mail.savedTime}</p>
+                    </div>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">${escapeHtml(mail.body)}</p>
+                </div>
+            `;
+        };
+
+        // Render Events
+        window.renderEvents = () => {
+            const query = (document.getElementById('searchEvents')?.value || '').toLowerCase();
+            const grid = document.getElementById('eventsGrid');
+            const filtered = store.events.filter(ev => (ev.title || '').toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-xs text-slate-400 py-8">No scheduled events.</p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(ev => `
+                <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-xs text-slate-800 dark:text-white">${escapeHtml(ev.title)}</h4>
+                        <button onclick="window.deleteEvent('${ev.id}')" class="text-xs text-slate-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <p class="text-xs text-red-500 font-medium"><i class="fas fa-calendar-day mr-1"></i>${ev.date} at ${ev.time}</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">${escapeHtml(ev.desc || '')}</p>
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-700 text-[10px] text-slate-400 font-mono">
+                        Saved: ${ev.savedTime}
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // Render Timestamps Register
+        window.renderTimestampsLog = () => {
+            const list = getSortedTimestamps();
+            const container = document.getElementById('fullTimestampLog');
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">No stored timestamps found.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(item => `
+                <div class="py-3 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-xs">
+                            <i class="fas ${item.icon}"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">${escapeHtml(item.title)}</p>
+                            <span class="text-[10px] uppercase font-semibold text-slate-400">${item.module}</span>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono text-emerald-500 font-medium">${item.savedTime}</span>
+                </div>
+            `).join('');
+        };
+
+        // Handlers for Firestore Writes
+        window.saveNote = async (e) => {
+            e.preventDefault();
+            await addItem('notes', {
+                title: document.getElementById('noteTitle').value,
+                column: document.getElementById('noteColumn').value,
+                content: document.getElementById('noteContent').value,
+                tag: 'Task'
+            });
+            closeModal();
+            showToast("Note saved to Firestore.");
+        };
+
+        window.moveNote = async (id, column) => {
+            await updateItem('notes', id, { column });
+            showToast("Note moved.");
+        };
+
+        window.deleteNote = async (id) => {
+            await deleteItem('notes', id);
+            showToast("Note deleted.");
+        };
+
+        window.saveContact = async (e) => {
+            e.preventDefault();
+            await addItem('contacts', {
+                name: document.getElementById('contactName').value,
+                email: document.getElementById('contactEmail').value,
+                phone: document.getElementById('contactPhone').value
+            });
+            closeModal();
+            showToast("Contact added.");
+        };
+
+        window.deleteContact = async (id) => {
+            await deleteItem('contacts', id);
+            showToast("Contact deleted.");
+        };
+
+        window.saveFile = async (e) => {
+            e.preventDefault();
+            await addItem('files', {
+                name: document.getElementById('fileName').value,
+                type: document.getElementById('fileType').value,
+                size: document.getElementById('fileSize').value
+            });
+            closeModal();
+            showToast("File record registered.");
+        };
+
+        window.deleteFile = async (id) => {
+            await deleteItem('files', id);
+            showToast("File removed.");
+        };
+
+        window.savePassword = async (e) => {
+            e.preventDefault();
+            await addItem('passwords', {
+                service: document.getElementById('passService').value,
+                username: document.getElementById('passUser').value,
+                pass: document.getElementById('passValue').value
+            });
+            closeModal();
+            showToast("Password saved securely.");
+        };
+
+        window.deletePassword = async (id) => {
+            await deleteItem('passwords', id);
+            showToast("Password deleted.");
+        };
+
+        window.sendEmail = async (e) => {
+            e.preventDefault();
+            await addItem('emails', {
+                recipient: document.getElementById('emailTo').value,
+                subject: document.getElementById('emailSub').value,
+                body: document.getElementById('emailBody').value
+            });
+            closeModal();
+            showToast("Email dispatched.");
+        };
+
+        window.deleteEmail = async (id) => {
+            await deleteItem('emails', id);
+            showToast("Email removed.");
+        };
+
+        window.saveEvent = async (e) => {
+            e.preventDefault();
+            await addItem('events', {
+                title: document.getElementById('evTitle').value,
+                date: document.getElementById('evDate').value,
+                time: document.getElementById('evTime').value,
+                desc: document.getElementById('evDesc').value
+            });
+            closeModal();
+            showToast("Event scheduled.");
+        };
+
+        window.deleteEvent = async (id) => {
+            await deleteItem('events', id);
+            showToast("Event removed.");
+        };
+
+        window.syncVaultToMail = async () => {
+            if (!auth.currentUser) return;
+            const timeStr = getTimestamp();
+            await addItem('emails', {
+                recipient: auth.currentUser.email || 'user@rookiefik.com',
+                subject: `ROOKIEFIK Realtime Firestore Vault Backup [${timeStr}]`,
+                body: `Automated Account Sync Snapshot:\n\nNotes Count: ${store.notes.length}\nContacts: ${store.contacts.length}\nVault Files: ${store.files.length}\nPasswords: ${store.passwords.length}\nEvents: ${store.events.length}\n\nStored securely under account ${auth.currentUser.uid}.`
+            });
+            showToast("Vault data synced to Email Inbox!");
+        };
+
+        window.togglePassVisibility = (id) => {
+            const el = document.getElementById(`pass-val-${id}`);
+            if (el) el.type = el.type === 'password' ? 'text' : 'password';
+        };
+
+        window.copyPass = (text) => {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showToast("Password copied!");
+        };
+    </script>
+
+    <!-- UI NAVIGATION & UTILITY SCRIPTS -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-tab'));
+
+            const target = document.getElementById(`panel-${tabId}`);
+            if (target) target.classList.remove('hidden');
+
+            const navBtn = document.getElementById(`nav-${tabId}`);
+            if (navBtn) navBtn.classList.add('active-tab');
+
+            const titles = {
+                dashboard: 'Dashboard Overview',
+                noteboard: 'Note Board (Kanban Columns)',
+                contacts: 'Contacts Directory',
+                files: 'Files Storage Vault',
+                passwords: 'Password Store & Vault',
+                emails: 'Email Manager',
+                events: 'Events & Reminders Schedule',
+                timestamps: 'Timestamp Activity History',
+                settings: 'Profile & Settings'
+            };
+            document.getElementById('pageTitle').innerText = titles[tabId] || 'ROOKIEFIK';
+            
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('hidden');
+            }
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+        function openModal(title, html) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalContent').innerHTML = html;
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            const card = document.getElementById('modalCard');
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }, 200);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // Modals Forms
+        function openNoteModal() {
+            openModal("New Note Entry", `
+                <form onsubmit="window.saveNote(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Title</label>
+                        <input type="text" id="noteTitle" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Column</label>
+                        <select id="noteColumn" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="todo">To Do</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Content</label>
+                        <textarea id="noteContent" rows="3" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Save Note (Firestore Sync)</button>
+                </form>
+            `);
+        }
+
+        function openContactModal() {
+            openModal("New Contact", `
+                <form onsubmit="window.saveContact(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Name</label>
+                        <input type="text" id="contactName" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Email</label>
+                        <input type="email" id="contactEmail" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Phone</label>
+                        <input type="text" id="contactPhone" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Save Contact</button>
+                </form>
+            `);
+        }
+
+        function openFileModal() {
+            openModal("Upload File Record", `
+                <form onsubmit="window.saveFile(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">File Name</label>
+                        <input type="text" id="fileName" placeholder="Document.pdf" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">File Type</label>
+                        <input type="text" id="fileType" placeholder="PDF / Image" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Size</label>
+                        <input type="text" id="fileSize" placeholder="1.5 MB" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">Upload Record</button>
+                </form>
+            `);
+        }
+
+        function openPasswordModal() {
+            openModal("Add Password Entry", `
+                <form onsubmit="window.savePassword(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Service / Website</label>
+                        <input type="text" id="passService" placeholder="github.com" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Username / Email</label>
+                        <input type="text" id="passUser" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Password</label>
+                        <input type="text" id="passValue" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Store Password</button>
+                </form>
+            `);
+        }
+
+        function openEmailModal() {
+            openModal("Compose Email", `
+                <form onsubmit="window.sendEmail(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">To</label>
+                        <input type="email" id="emailTo" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Subject</label>
+                        <input type="text" id="emailSub" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Message Body</label>
+                        <textarea id="emailBody" rows="4" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">Dispatch Email</button>
+                </form>
+            `);
+        }
+
+        function openEventModal() {
+            openModal("Schedule Event", `
+                <form onsubmit="window.saveEvent(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Event Title</label>
+                        <input type="text" id="evTitle" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold uppercase text-slate-400 mb-1">Date</label>
+                            <input type="date" id="evDate" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold uppercase text-slate-400 mb-1">Time</label>
+                            <input type="time" id="evTime" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold uppercase text-slate-400 mb-1">Description</label>
+                        <input type="text" id="evDesc" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition">Schedule Event</button>
+                </form>
+            `);
+        }
+
+        // Live Clock
+        setInterval(() => {
+            const el = document.getElementById('liveClock');
+            if (el) {
+                const now = new Date();
+                el.innerText = now.toLocaleTimeString();
+            }
+        }, 1000);
+
+        window.onload = () => {
+            switchTab('dashboard');
+        };
+    </script>
+</body>
+</html>
